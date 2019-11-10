@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 class Bingo():
     def __init__(self, letters="BINGO", rows=5, grids=3):
-        self.letters = "BINGO"
+        self.letters = letters
         self.cols = len(letters)
         self.rows = rows
         self.grids = grids
