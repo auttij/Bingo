@@ -1,6 +1,7 @@
 import os
 import random
 from PIL import Image, ImageDraw, ImageFont
+from fpdf import FPDF
 
 class Bingo():
     def __init__(self, letters="BINGO", rows=5, grids=3):
@@ -10,8 +11,8 @@ class Bingo():
         self.grids = grids
         self.balls = []
         self.printing = False
-        self.boxSize = 50
-        self.marginSize = 2 * self.boxSize
+        self.boxSize = 30
+        self.marginSize = self.boxSize # Planned to have it different but looked better at this size, remove?
         self.createBingo()
 
     """
@@ -98,28 +99,33 @@ class Bingo():
     :param sizeRatio: float that tells how large the font should be as a ratio of self.boxSize
     :return: ImageFont
     """
-    def defineFontSize(self, fontName, sizeRatio):
+    def defineFontSize(self, fontName="", sizeRatio=1):
         fontSize = 0
-        font = ImageFont.truetype(os.path.join("fonts", fontName), fontSize)
-        while font.getsize("1")[1] / self.boxSize <= sizeRatio:
-            fontSize += 1
+        if fontName:
             font = ImageFont.truetype(os.path.join("fonts", fontName), fontSize)
+            while font.getsize("1")[1] / self.boxSize <= sizeRatio:
+                fontSize += 1
+                font = ImageFont.truetype(os.path.join("fonts", fontName), fontSize)
+        else:
+            font = ImageFont.load_default()
         return font
 
     """
     Draws the base image used for the bingo sheets.
     Includes the letters at the top and self.grid amount of grids
     stacked horizontally
+
+    :returns: PIL Image file with base of correct sized bingo sheet grid
     """
-    def drawGridBase(self):
-        height = (self.rows * self.boxSize + self.marginSize + 1) * self.grids
+    def drawGridBase(self, font):
+        height = (self.rows * self.boxSize + self.marginSize * 2) * self.grids
         width = self.cols * self.boxSize + 1
         bSize = self.boxSize
         mSize = self.marginSize
 
         image = Image.new(mode='L', size=(width, height), color = 255)
         draw = ImageDraw.Draw(image)
-        font = self.defineFontSize("libel-suit-rg.ttf", 1.2)
+        font = self.defineFontSize("", 1.2)
         
         # Draw letters at top
         for x, letter in enumerate(self.letters):
@@ -132,7 +138,7 @@ class Bingo():
         y_start = 0
         y_end = self.rows * self.boxSize + 1
         for grid in range(self.grids):
-            offset = (y_end + self.marginSize) * grid + self.marginSize
+            offset = (y_end + self.marginSize) * grid + self.marginSize * 2
             for x in range(0, image.width, self.boxSize):
                 line = ((x, y_start + offset), (x, y_end + offset))
                 draw.line(line, fill=128)
@@ -152,15 +158,16 @@ class Bingo():
 
     :param count: amount of sheets to be drawn
     :param midImg: path to the image-file for bonus square
-    :returns: Array of Images
+    :param font: path to the used font .tff-file
+    :returns: Array of PIL Images
     """
-    def createNumberSheet(self, count=1, midImg=""):
-        imgBase = self.drawGridBase()
+    def createNumberSheet(self, count=1, midImg="", dir="", font=""):
+        imgBase = self.drawGridBase(font=font)
         images = []
         bSize = self.boxSize
         mSize = self.marginSize
         
-        font = self.defineFontSize("libel-suit-rg.ttf", 0.9)
+        font = self.defineFontSize(font, 0.8)
 
         if midImg:
             img2 = Image.open(midImg)
@@ -171,7 +178,7 @@ class Bingo():
             draw = ImageDraw.Draw(img)
             balls = self.shuffledColumns()
             for g in range(self.grids):
-                gridOffset = (self.rows * bSize + mSize) * g + self.marginSize
+                gridOffset = (self.rows * bSize + mSize) * g + self.marginSize * 2
                 for y in range(self.rows):  
                     for x in range(self.cols):
                         msg = balls[x][y + self.rows * g][1:]
@@ -181,9 +188,9 @@ class Bingo():
 
                         draw.text((xPos,yPos), msg, 64, font=font)
 
-            if midImg:                
+            if midImg:             
                 for g in range(self.grids):
-                    gridOffset = (self.rows * bSize + mSize + 1) * g + self.marginSize
+                    gridOffset = (self.rows * bSize + mSize + 1) * g + self.marginSize * 2
                     xPos = bSize * (self.cols // 2) + 1
                     yPos = bSize * (self.rows // 2) + gridOffset + 1
                     img.paste(img2, (xPos, yPos))
@@ -191,6 +198,110 @@ class Bingo():
             del draw
             images.append(img)
 
-        #images[0].save("img/test.png")
-        #images[0].show()
         return images
+
+    """
+    Rotates each image in the given images-array by the given angle
+
+    :param images: array of PIL Image objects
+    :param angle: rotation angle as degrees
+    :returns: Array of PIL Images 
+    """
+    def rotateImages(self, images, angle):
+        out = [image.rotate(angle, expand=True) for image in images]
+        return out 
+
+    """
+    Saves given list of images to the given path
+    
+    :param images: array of PIL Image objects
+    :param saveDir: path for saving the Images
+    """
+    def saveImages(self, images, saveDir):
+        if saveDir:
+            dirPath = saveDir.split("/")
+            if not os.path.exists(saveDir):
+                os.makedirs(saveDir)
+
+            for i, image in enumerate(images):
+                name =  os.path.join(*dirPath + [f"{i}.jpg"])
+                image.save(name)
+
+    """
+    Takes to images and concatenates them together into a single image
+
+    :param im1: First PIL Image
+    :param im2: Second PIL Image
+    :param margin: Amount of margin between the two Images
+    :param marginColor: Color for te margin
+    :returns: Single PIL Image with the two pictures concatenated
+    """
+    def get_concat_v(self, im1, im2, margin=None, marginColor=(255, 255, 255)):
+        if margin == None:
+            margin = self.marginSize
+
+        dst = Image.new('RGB', (im1.width, im1.height + im2.height + margin), color=marginColor)
+        dst.paste(im1, (0, 0))
+        dst.paste(im2, (0, im1.height + margin))
+        return dst
+
+    """
+    Takes a list of PIL Images and organizes combining them into larger Images that can fit a PDF
+    
+    :param images: List of PIL Images that get combined
+    :param heighLimit: Size limit for the 
+    """
+    def combineImages(self, images, heightLimit):
+        out = []
+        width, height = images[0].size
+        current = Image.new('RGB', (width, 0))
+        currH = 0
+        margin = self.boxSize
+        for img in images:
+            if currH + height + margin > heightLimit:
+                out.append(current)
+                currH = 0
+                current = Image.new('RGB', (width, 0))
+            current = self.get_concat_v(current, img)
+            currH += height + margin
+        return out
+
+
+    """
+    Creates $count bingo sheets, combines them into larger images and combines those
+    into a large printable PDF file, that gets saved to dir along with all the individual pictures
+
+    :param count: Amount of Bingo-sheets to be created
+    :param dir: Save directory
+    :param midImg: path to the image-file for bonus square
+    :param font: path to the used font .tff-file
+    """
+    def createPDF(self, count, dir="img/out", midImg="", font=""):
+        pw, ph = 595, 842 #PDF width/height in pixels
+        images = self.createNumberSheet(count, midImg, dir)
+        if (dir):
+            dir += "/"
+
+        # Currently all images get rotated 90, should add logic to figure out which orientation works best
+        images = self.rotateImages(images, 90)
+        images = self.combineImages(images, ph)
+        # Only way I found for fpdf to be able to read the images was to save them first
+        self.saveImages(images, dir)
+
+        cover = Image.open(dir + "0" + ".jpg")
+        width, height = cover.size
+        
+        pdf = FPDF(unit = "pt", format = [pw, ph])
+        pdf.add_page()
+
+        ch = 0 # cumulative height
+        for num in range(len(images)):
+            if ch + self.boxSize + height > ph:
+                pdf.add_page()
+                ch = 0
+            pdf.image(dir + str(num) + ".jpg", 0, ch)
+            ch += height + self.boxSize
+
+        output_path = os.path.join(dir, "print.pdf")
+        pdf.output(output_path, "F")
+
