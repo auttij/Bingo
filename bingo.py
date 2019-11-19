@@ -95,7 +95,7 @@ class Bingo():
     Tries to automatically figure out a font size for the used
     boxSize. 
 
-    :param fontName: path to the used font .tff-file
+    :param fontName: path to the used font .ttf-file
     :param sizeRatio: float that tells how large the font should be as a ratio of self.boxSize
     :return: ImageFont
     """
@@ -158,7 +158,7 @@ class Bingo():
 
     :param count: amount of sheets to be drawn
     :param midImg: path to the image-file for bonus square
-    :param font: path to the used font .tff-file
+    :param font: path to the used font .ttf-file
     :returns: Array of PIL Images
     """
     def createNumberSheet(self, count=1, midImg="", dir="", font=""):
@@ -274,11 +274,11 @@ class Bingo():
     :param count: Amount of Bingo-sheets to be created
     :param dir: Save directory
     :param midImg: path to the image-file for bonus square
-    :param font: path to the used font .tff-file
+    :param font: path to the used font .ttf-file
     """
     def createPDF(self, count, dir="img/out", midImg="", font=""):
         pw, ph = 595, 842 #PDF width/height in pixels
-        images = self.createNumberSheet(count, midImg, dir)
+        images = self.createNumberSheet(count, midImg, dir, font=font)
         if (dir):
             dir += "/"
 
