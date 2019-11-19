@@ -28,7 +28,7 @@ while b.nonEmpty():
     print(out)
 ~~~
 
-## PDF Example
+## Bingo sheet example
 ![PDF image](img/example.jpg)
 
 
