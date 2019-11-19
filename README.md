@@ -28,6 +28,9 @@ while b.nonEmpty():
     print(out)
 ~~~
 
+## PDF Example
+![PDF image](img/example.jpg)
+
 
 ## Todo
 - Add logic to combining pictures to PDF's so they're automatically fitted to the page
