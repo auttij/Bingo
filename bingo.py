@@ -92,8 +92,7 @@ class Bingo():
         return out
 
     """
-    Tries to automatically figure out a font size for the used
-    boxSize. 
+    Tries to automatically figure out a font size for the used boxSize. 
 
     :param fontName: path to the used font .ttf-file
     :param sizeRatio: float that tells how large the font should be as a ratio of self.boxSize
@@ -118,7 +117,7 @@ class Bingo():
     :returns: PIL Image file with base of correct sized bingo sheet grid
     """
     def drawGridBase(self, font=""):
-        height = (self.rows * self.boxSize + self.marginSize * 2) * self.grids
+        height = (self.rows * self.boxSize + self.marginSize + 1) * self.grids + self.marginSize
         width = self.cols * self.boxSize + 1
         bSize = self.boxSize
         mSize = self.marginSize
@@ -282,7 +281,6 @@ class Bingo():
         if (dir):
             dir += "/"
 
-        self.saveImages(images[0:1], "img/")
         # Currently all images get rotated 90, should add logic to figure out which orientation works best
         images = self.rotateImages(images, 90)
         images = self.combineImages(images, ph)
