@@ -117,7 +117,7 @@ class Bingo():
 
     :returns: PIL Image file with base of correct sized bingo sheet grid
     """
-    def drawGridBase(self, font):
+    def drawGridBase(self, font=""):
         height = (self.rows * self.boxSize + self.marginSize * 2) * self.grids
         width = self.cols * self.boxSize + 1
         bSize = self.boxSize
@@ -125,7 +125,7 @@ class Bingo():
 
         image = Image.new(mode='L', size=(width, height), color = 255)
         draw = ImageDraw.Draw(image)
-        font = self.defineFontSize("", 1.2)
+        font = self.defineFontSize(font, 1.2)
         
         # Draw letters at top
         for x, letter in enumerate(self.letters):
@@ -282,6 +282,7 @@ class Bingo():
         if (dir):
             dir += "/"
 
+        self.saveImages(images[0:1], "img/")
         # Currently all images get rotated 90, should add logic to figure out which orientation works best
         images = self.rotateImages(images, 90)
         images = self.combineImages(images, ph)
